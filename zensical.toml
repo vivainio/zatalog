@@ -12,6 +12,7 @@ nav = [
   { "Getting started" = "getting-started.md" },
   { "Catalog model" = "model.md" },
   { "Inheritance" = "inheritance.md" },
+  { "Jira metadata" = "jira.md" },
   { "Descriptor files" = "descriptors.md" },
   { "Command reference" = "commands.md" },
   { "Validation" = "validation.md" },

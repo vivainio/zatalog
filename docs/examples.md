@@ -1,5 +1,8 @@
 # Examples
 
+For Jira-specific examples, including multiple projects and inheritance, see
+[Jira metadata](jira.md).
+
 ## One application with several components
 
 Model the application as a System and independently meaningful units as
