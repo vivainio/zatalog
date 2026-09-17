@@ -95,3 +95,44 @@ spec:
 
 If the imported `storefront` System points to a Domain, normal inheritance can
 continue from the local Component through both remote entities.
+
+## Share a Splunk index across an application
+
+Put operational metadata on the System when every Component in the application
+uses the same Splunk index:
+
+```yaml
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: storefront
+  annotations:
+    splunk/index: storefront-production
+spec:
+  owner: group:default/commerce
+  domain: commerce
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: checkout-api
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/payments
+  system: storefront
+```
+
+Resolve it from the Component:
+
+```console
+$ zatalog annotation checkout-api splunk/index
+storefront-production
+# inherited from System:default/storefront
+```
+
+Use a Component annotation when one service writes to a different index; its
+local value overrides the System. Put the annotation on a Domain only when the
+same index truly spans several Systems. Annotation values are strings, so an
+organization that needs several indexes can define its own convention, such as
+a comma-separated `splunk/indexes` value.
