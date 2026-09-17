@@ -1,0 +1,5 @@
+id: publish
+name: Publish files
+action: publish:github
+input:
+  repoUrl: ${{ parameters.url }}

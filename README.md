@@ -1,8 +1,9 @@
 # zatalog
 
 A Python CLI and library for parsing Backstage `catalog-info.yaml` files and
-**fully evaluating** them: resolving entity references, following the
-Component/API/Resource → System → Domain hierarchy, and answering questions
+evaluating them locally: expanding descriptor placeholders, resolving entity
+references, following the Component/API/Resource → System → Domain hierarchy,
+and answering questions
 like "what Jira project does this actually belong to?" even when that's only
 declared several levels up the hierarchy.
 
@@ -55,6 +56,8 @@ pip install -e .
 ## Library usage
 
 ```python
+from pathlib import Path
+
 from zatalog.catalog import load_catalog
 from zatalog.query import jira_info
 
@@ -73,6 +76,19 @@ file. Use `-f/--file` (repeatable) to load specific files, or
 `--root DIR --recursive` to load every catalog-info file under a directory
 tree (a typical Backstage monorepo layout).
 
+Backstage descriptor substitutions are evaluated before entities are parsed.
+`$text` embeds a referenced file as a string, while `$json` and
+`$yaml` embed parsed data. Targets may be relative to the descriptor or absolute
+HTTP(S) URLs.
+
+```yaml
+spec:
+  definition:
+    $text: ./openapi.yaml
+  customData:
+    $json: https://example.com/component-data.json
+```
+
 ```
 zatalog list [--kind Component]
 zatalog show <ref> [--format yaml|json]
@@ -81,7 +97,7 @@ zatalog annotation <ref> <key> [--no-walk] # walks System -> Domain if unset
 zatalog label <ref> <key> [--no-walk]
 zatalog jira <ref> [--annotation KEY] [--no-walk] [--format text|json]
 zatalog refs <ref>                         # outgoing relations, flags dangling ones
-zatalog validate                           # every relation in the catalog resolves?
+zatalog validate                           # do supported declared relations resolve?
 ```
 
 Entity references accept `kind:namespace/name`, `namespace/name`, or a bare

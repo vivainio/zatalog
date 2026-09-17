@@ -10,10 +10,14 @@ as a plain dict rather than a per-kind dataclass -- callers reach into it with
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, NamedTuple
+from urllib.error import HTTPError, URLError
+from urllib.parse import urljoin, urlparse
+from urllib.request import urlopen
 
 import yaml
 
@@ -22,6 +26,7 @@ from zatalog.errors import CatalogFileError
 DEFAULT_NAMESPACE = "default"
 
 _REF_RE = re.compile(r"^(?:([^:/\s]+):)?(?:([^:/\s]+)/)?([^:/\s]+)$")
+_PLACEHOLDERS = {"$text", "$json", "$yaml"}
 
 
 class EntityRef(NamedTuple):
@@ -128,6 +133,68 @@ def parse_documents(text: str) -> list[dict[str, Any]]:
     return [d for d in docs if d]
 
 
+def _resolve_placeholder_target(target: str, base: Path | str) -> Path | str:
+    """Resolve a placeholder target relative to its catalog descriptor."""
+    parsed = urlparse(target)
+    if parsed.scheme in ("http", "https"):
+        return target
+    if parsed.scheme:
+        raise CatalogFileError(f"Unsupported placeholder URL scheme in {target!r}")
+    if isinstance(base, Path):
+        path = Path(target)
+        return path if path.is_absolute() else base.parent / path
+    return urljoin(base, target)
+
+
+def _read_placeholder(target: Path | str) -> str:
+    try:
+        if isinstance(target, Path):
+            return target.read_text(encoding="utf-8")
+        with urlopen(target) as response:  # noqa: S310 - catalog authors explicitly select the URL
+            return response.read().decode("utf-8")
+    except (OSError, HTTPError, URLError, UnicodeError) as e:
+        raise CatalogFileError(f"Cannot read placeholder {target}: {e}") from e
+
+
+def expand_placeholders(value: Any, base: Path | str) -> Any:
+    """Recursively evaluate Backstage ``$text``, ``$json`` and ``$yaml`` placeholders."""
+    if isinstance(value, list):
+        return [expand_placeholders(item, base) for item in value]
+    if not isinstance(value, dict):
+        return value
+
+    dollar_keys = [key for key in value if isinstance(key, str) and key.startswith("$")]
+    if not dollar_keys:
+        return {key: expand_placeholders(item, base) for key, item in value.items()}
+    # Backstage leaves ambiguous and unknown dollar-prefixed objects untouched;
+    # JSON Schema objects such as {"$ref": ..., "description": ...} rely on this.
+    if len(value) != 1:
+        return value
+
+    kind = dollar_keys[0]
+    if kind not in _PLACEHOLDERS:
+        return value
+    raw_target = value[kind]
+    if not isinstance(raw_target, str) or not raw_target:
+        raise CatalogFileError(f"Placeholder {kind} target must be a non-empty string")
+    target = _resolve_placeholder_target(raw_target, base)
+
+    content = _read_placeholder(target)
+    if kind == "$text":
+        return content
+    try:
+        if kind == "$json":
+            return json.loads(content)
+        documents = list(yaml.safe_load_all(content))
+    except (json.JSONDecodeError, yaml.YAMLError) as e:
+        raise CatalogFileError(f"Invalid {kind[1:].upper()} in placeholder {target}: {e}") from e
+    if len(documents) != 1:
+        raise CatalogFileError(
+            f"Placeholder {kind} expected exactly one YAML document in {target}, found {len(documents)}"
+        )
+    return documents[0]
+
+
 def entity_from_doc(doc: dict[str, Any], source: Path | None = None) -> Entity:
     """Validate and build an `Entity` from one raw YAML document."""
     where = f" in {source}" if source else ""
@@ -148,7 +215,10 @@ def entity_from_doc(doc: dict[str, Any], source: Path | None = None) -> Entity:
 
 def load_entities(text: str, source: Path | None = None) -> list[Entity]:
     """Parse every entity document in a catalog-info.yaml file's text."""
-    return [entity_from_doc(doc, source) for doc in parse_documents(text)]
+    docs = parse_documents(text)
+    if source is not None:
+        docs = [expand_placeholders(doc, source) for doc in docs]
+    return [entity_from_doc(doc, source) for doc in docs]
 
 
 def load_entities_from_file(path: Path) -> list[Entity]:

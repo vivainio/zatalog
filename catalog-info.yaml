@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: zatalog
+  description: CLI and Python library for evaluating Backstage catalog descriptors
+  annotations:
+    github.com/project-slug: vivainio/zatalog
+spec:
+  type: tool
+  lifecycle: experimental
+  owner: group:default/zatalog-maintainers
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: zatalog-maintainers
+spec:
+  type: team
+  children: []

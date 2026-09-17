@@ -34,6 +34,24 @@ def test_show(capsys) -> None:
     assert "type: service" in out
 
 
+def test_show_discovers_catalog_in_parent_directory(capsys, monkeypatch, tmp_path) -> None:
+    project = tmp_path / "project"
+    nested = project / "src" / "package"
+    nested.mkdir(parents=True)
+    (project / "catalog-info.yaml").write_text(
+        Path(FIXTURE).read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    monkeypatch.chdir(nested)
+    parser = build_parser()
+    args = parser.parse_args(["show", "component:default/payments-api"])
+
+    args.func(args)
+
+    out = capsys.readouterr().out
+    assert "name: payments-api" in out
+    assert "type: service" in out
+
+
 def test_get(capsys) -> None:
     out = run(capsys, "get", "component:default/payments-api", "spec.type").out
     assert out.strip() == "service"

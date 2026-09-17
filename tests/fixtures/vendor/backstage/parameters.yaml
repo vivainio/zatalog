@@ -1,0 +1,7 @@
+title: Provide simple information
+required:
+  - url
+properties:
+  url:
+    title: url
+    type: string
