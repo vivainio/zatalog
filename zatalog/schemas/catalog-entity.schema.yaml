@@ -141,6 +141,9 @@ allOf:
             target: {type: string, minLength: 1}
             targets: {type: array, items: {type: string, minLength: 1}}
             presence: {enum: [required, optional]}
+            ref: {type: string, minLength: 1}
+            path: {type: string, minLength: 1}
+            paths: {type: array, items: {type: string, minLength: 1}}
   - if: {properties: {kind: {const: Template}}}
     then:
       required: [spec]

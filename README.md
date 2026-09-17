@@ -87,6 +87,10 @@ file. Use `-f/--file` (repeatable) to load specific files, or
 `--root DIR --recursive` to load every catalog-info file under a directory
 tree (a typical Backstage monorepo layout).
 
+Catalogs can compose definitions from Git repositories through `Location`
+entities. Git sources are cached locally and join the same catalog, allowing a
+local Component to refer to a centrally maintained System or Domain.
+
 Descriptor substitutions modeled after Backstage are evaluated before entities
 are parsed.
 `$text` embeds a referenced file as a string, while `$json` and

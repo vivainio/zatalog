@@ -62,3 +62,33 @@ spec:
 
 Split it later if parts gain independent ownership, deployment, or operational
 responsibility.
+
+## Central Systems and Domains repository
+
+Keep organization-wide entities in a separate repository and import them from
+each application catalog:
+
+```yaml
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: organization-catalog
+spec:
+  type: git
+  target: https://github.com/example/organization-catalog.git
+  ref: main
+  paths: [systems/*.yaml, domains/*.yaml]
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: checkout-api
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/payments
+  system: storefront
+```
+
+If the imported `storefront` System points to a Domain, normal inheritance can
+continue from the local Component through both remote entities.

@@ -15,6 +15,7 @@ from pathlib import Path
 from zatalog.discovery import discover_catalog_files, find_default_catalog_file
 from zatalog.entity import Entity, EntityRef, load_entities_from_file, parse_entity_ref
 from zatalog.errors import CatalogFileError, EntityNotFoundError
+from zatalog.locations import resolve_location
 
 # kind -> [(spec key, relation name, default kind for bare refs, is a list)]
 RELATION_SPECS: dict[str, list[tuple[str, str, str | None, bool]]] = {
@@ -193,8 +194,17 @@ class Catalog:
 
 def load_catalog(paths: list[Path]) -> Catalog:
     catalog = Catalog()
-    for path in paths:
-        catalog.add_all(load_entities_from_file(path))
+    pending = [path.resolve() for path in paths]
+    loaded: set[Path] = set()
+    while pending:
+        path = pending.pop(0)
+        if path in loaded:
+            continue
+        loaded.add(path)
+        entities = load_entities_from_file(path)
+        catalog.add_all(entities)
+        for entity in entities:
+            pending.extend(candidate for candidate in resolve_location(entity) if candidate not in loaded)
     return catalog
 
 
