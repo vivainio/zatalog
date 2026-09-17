@@ -37,6 +37,10 @@ dev = [
     "ruff>=0.16",
 ]
 
+[[tool.uv.index]]
+url = "https://pypi.org/simple"
+default = true
+
 [tool.setuptools]
 packages = ["zatalog"]
 
