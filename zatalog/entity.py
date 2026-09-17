@@ -108,6 +108,7 @@ class Entity:
     metadata: EntityMetadata
     spec: dict[str, Any] = field(default_factory=dict)
     source: Path | None = None
+    raw: dict[str, Any] = field(default_factory=dict, repr=False)
 
     @property
     def ref(self) -> EntityRef:
@@ -210,6 +211,7 @@ def entity_from_doc(doc: dict[str, Any], source: Path | None = None) -> Entity:
         metadata=EntityMetadata.from_dict(metadata),
         spec=dict(doc.get("spec") or {}),
         source=source,
+        raw=doc,
     )
 
 

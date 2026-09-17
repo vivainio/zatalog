@@ -1,11 +1,21 @@
 # zatalog
 
-A Python CLI and library for parsing Backstage `catalog-info.yaml` files and
-evaluating them locally: expanding descriptor placeholders, resolving entity
-references, following the Component/API/Resource → System → Domain hierarchy,
-and answering questions
-like "what Jira project does this actually belong to?" even when that's only
-declared several levels up the hierarchy.
+[Documentation](https://vivainio.github.io/zatalog/)
+
+A Python CLI and library for tools that use the familiar `catalog-info.yaml`
+file structure: expanding descriptor placeholders, resolving entity references,
+following the Component/API/Resource → System → Domain hierarchy, and answering
+questions like "what Jira project does this actually belong to?" even when
+that's only declared several levels up the hierarchy.
+
+## Compatibility
+
+Backstage compatibility is not a goal. Zatalog uses the same convenient entity
+shape and common kind names so independent tools can share `catalog-info.yaml`,
+but it does not attempt to reproduce the Backstage catalog backend, ingestion
+pipeline, policies, or validation results. Zatalog owns its schema and behavior;
+they may intentionally differ from Backstage as the needs of local tooling
+evolve.
 
 ## Why
 
@@ -25,7 +35,8 @@ There's no existing Python package that does this. What exists instead:
   the canonical entity model and JSON Schemas
   (`packages/catalog-model/src/schema/Entity.schema.json` and
   `kinds/*.schema.json`). zatalog's `Entity`/`EntityMetadata` shapes mirror
-  these fields; it does not reimplement full JSON-Schema validation.
+  these fields. Zatalog's model starts from the same shape but is independently
+  maintained.
 - **`plugin-catalog-backend`** (same repo) -- where Backstage actually
   computes bidirectional `relations` (e.g. a Component's `spec.system`
   becomes a `partOf` relation, and the System gets `hasPart` back) at ingest
@@ -76,7 +87,8 @@ file. Use `-f/--file` (repeatable) to load specific files, or
 `--root DIR --recursive` to load every catalog-info file under a directory
 tree (a typical Backstage monorepo layout).
 
-Backstage descriptor substitutions are evaluated before entities are parsed.
+Descriptor substitutions modeled after Backstage are evaluated before entities
+are parsed.
 `$text` embeds a referenced file as a string, while `$json` and
 `$yaml` embed parsed data. Targets may be relative to the descriptor or absolute
 HTTP(S) URLs.
@@ -97,7 +109,7 @@ zatalog annotation <ref> <key> [--no-walk] # walks System -> Domain if unset
 zatalog label <ref> <key> [--no-walk]
 zatalog jira <ref> [--annotation KEY] [--no-walk] [--format text|json]
 zatalog refs <ref>                         # outgoing relations, flags dangling ones
-zatalog validate                           # do supported declared relations resolve?
+zatalog validate                           # schemas valid and supported relations resolve?
 ```
 
 Entity references accept `kind:namespace/name`, `namespace/name`, or a bare
@@ -123,6 +135,13 @@ custom kind, since `spec` is kept as a plain dict. Relation inference
 (`Catalog.relations()`, `system_of()`, `domain_of()`, `owner_of()`) is
 defined per-kind in `zatalog/catalog.py:RELATION_SPECS` and can be extended
 for custom kinds.
+
+`zatalog validate` applies zatalog's own bundled schema to API, Component,
+Domain, Group, Location, Resource, System, User, and Template entities. Unknown
+versions and custom or plugin-owned kinds are accepted without schema
+validation; their `spec` remains available as a plain dictionary. Validation
+runs after `$text`, `$json`, and `$yaml` expansion and reports both schema
+violations and unresolved supported relations.
 
 ## Development
 

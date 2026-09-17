@@ -84,4 +84,36 @@ def test_validate_reports_dangling(capsys) -> None:
     with pytest.raises(ApplicationError):
         args.func(args)
     out = capsys.readouterr().out
+    assert "schema spec: 'definition' is a required property" in out
     assert "nonexistent-service" in out
+
+
+def test_validate_accepts_valid_catalog(capsys, tmp_path) -> None:
+    catalog_file = tmp_path / "catalog-info.yaml"
+    catalog_file.write_text(
+        """
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: valid-service
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/owners
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: owners
+spec:
+  type: team
+  children: []
+""",
+        encoding="utf-8",
+    )
+    parser = build_parser()
+    args = parser.parse_args(["validate", "-f", str(catalog_file)])
+
+    args.func(args)
+
+    assert "schemas valid and all relations resolve" in capsys.readouterr().out

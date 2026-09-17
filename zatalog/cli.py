@@ -15,6 +15,7 @@ from zatalog.catalog import Catalog, load_catalog, resolve_catalog_paths
 from zatalog.entity import Entity
 from zatalog.errors import ApplicationError
 from zatalog.query import get_path, jira_info, resolve_annotation, resolve_label
+from zatalog.schema import validate_entity
 
 
 def _load_catalog(args: argparse.Namespace) -> Catalog:
@@ -138,11 +139,13 @@ def validate_command(args: argparse.Namespace) -> None:
     entities = catalog.all()
     problems: list[str] = []
     for entity in entities:
+        for problem in validate_entity(entity):
+            problems.append(f"{entity.ref}: schema {problem}")
         for relation in catalog.relations(entity):
             if not relation.resolved:
                 problems.append(f"{entity.ref}: {relation.name} -> {relation.ref} does not resolve")
     if not problems:
-        print(f"OK: {len(entities)} entities, all relations resolve.")
+        print(f"OK: {len(entities)} entities, schemas valid and all relations resolve.")
         return
     for problem in problems:
         print(problem)
