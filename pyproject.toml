@@ -1,0 +1,54 @@
+[project]
+name = "zatalog"
+version = "0.1.0"
+description = "CLI and library for parsing and fully evaluating Backstage catalog-info.yaml files"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+keywords = ["backstage", "catalog-info", "cli", "software-catalog", "jira"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/vivainio/zatalog"
+Repository = "https://github.com/vivainio/zatalog"
+Issues = "https://github.com/vivainio/zatalog/issues"
+
+[project.scripts]
+zatalog = "zatalog.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.16",
+]
+
+[tool.setuptools]
+packages = ["zatalog"]
+
+[tool.setuptools.package-data]
+zatalog = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "ANN"]
+ignore = ["ANN401"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN001", "ANN002", "ANN003", "ANN204", "ANN205", "ANN206", "ANN401"]
+"*_test.py" = ["ANN"]

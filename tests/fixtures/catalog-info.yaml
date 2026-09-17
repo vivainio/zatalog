@@ -1,0 +1,62 @@
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: payments-domain
+  annotations:
+    jira/project-key: PAY
+spec:
+  owner: group:default/payments-team
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: payments-team
+spec:
+  type: team
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: payments-system
+spec:
+  owner: group:default/payments-team
+  domain: payments-domain
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: payments-api
+  title: Payments API
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/payments-team
+  system: payments-system
+  providesApis:
+    - payments-api-spec
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: checkout-service
+  annotations:
+    jira/project-key: "CHK, secondary/OTH"
+    jira/component: checkout
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/payments-team
+  system: payments-system
+  dependsOn:
+    - component:default/nonexistent-service
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: payments-api-spec
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:default/payments-team
+  system: payments-system
