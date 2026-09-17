@@ -13,7 +13,10 @@ from zatalog.errors import CatalogFileError
 @pytest.mark.parametrize(
     ("ref", "expected"),
     [
-        ("component:default/my-service", EntityRef("component", "default", "my-service")),
+        (
+            "component:default/my-service",
+            EntityRef("component", "default", "my-service"),
+        ),
         ("default/my-service", EntityRef(None, "default", "my-service")),
         ("my-service", EntityRef(None, "default", "my-service")),
         ("system:payments", EntityRef("system", "default", "payments")),
@@ -67,11 +70,15 @@ def test_load_entities_rejects_invalid_yaml() -> None:
 
 
 def test_expands_text_json_and_yaml_placeholders(tmp_path) -> None:
-    (tmp_path / "description.txt").write_text("A detailed description\n", encoding="utf-8")
+    (tmp_path / "description.txt").write_text(
+        "A detailed description\n", encoding="utf-8"
+    )
     (tmp_path / "details.json").write_text(
         '{"type": "service", "flags": [true, 3]}', encoding="utf-8"
     )
-    (tmp_path / "extra.yaml").write_text("owner: team-a\ntags:\n  - python\n", encoding="utf-8")
+    (tmp_path / "extra.yaml").write_text(
+        "owner: team-a\ntags:\n  - python\n", encoding="utf-8"
+    )
     catalog_file = tmp_path / "catalog-info.yaml"
     catalog_file.write_text(
         """

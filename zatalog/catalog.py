@@ -94,10 +94,23 @@ class Catalog:
         entities = list(self._entities.values())
         if kind:
             entities = [e for e in entities if e.kind.lower() == kind.lower()]
-        return sorted(entities, key=lambda e: (e.kind.lower(), e.metadata.namespace.lower(), e.metadata.name.lower()))
+        return sorted(
+            entities,
+            key=lambda e: (
+                e.kind.lower(),
+                e.metadata.namespace.lower(),
+                e.metadata.name.lower(),
+            ),
+        )
 
-    def try_get(self, ref: str | EntityRef, default_kind: str | None = None) -> Entity | None:
-        parsed = ref if isinstance(ref, EntityRef) else parse_entity_ref(ref, default_kind=default_kind)
+    def try_get(
+        self, ref: str | EntityRef, default_kind: str | None = None
+    ) -> Entity | None:
+        parsed = (
+            ref
+            if isinstance(ref, EntityRef)
+            else parse_entity_ref(ref, default_kind=default_kind)
+        )
         if parsed.kind:
             return self._entities.get(parsed.key)
         matches = [
@@ -111,7 +124,11 @@ class Catalog:
         return None
 
     def get(self, ref: str | EntityRef, default_kind: str | None = None) -> Entity:
-        parsed = ref if isinstance(ref, EntityRef) else parse_entity_ref(ref, default_kind=default_kind)
+        parsed = (
+            ref
+            if isinstance(ref, EntityRef)
+            else parse_entity_ref(ref, default_kind=default_kind)
+        )
         entity = self.try_get(parsed)
         if entity is not None:
             return entity
@@ -128,7 +145,9 @@ class Catalog:
                     f"Ambiguous reference '{ref}' matches multiple kinds ({kinds}); "
                     f"qualify it, e.g. 'component:{parsed}'"
                 )
-        raise EntityNotFoundError(f"No such entity: '{ref}' (loaded {len(self._entities)} entities)")
+        raise EntityNotFoundError(
+            f"No such entity: '{ref}' (loaded {len(self._entities)} entities)"
+        )
 
     def relations(self, entity: Entity) -> list[Relation]:
         """Outgoing relations declared in `entity.spec`, resolved against this catalog."""
@@ -140,7 +159,11 @@ class Catalog:
                 continue
             raw_refs = value if is_list else [value]
             for raw in raw_refs:
-                ref = parse_entity_ref(str(raw), default_kind=default_kind, default_namespace=entity.metadata.namespace)
+                ref = parse_entity_ref(
+                    str(raw),
+                    default_kind=default_kind,
+                    default_namespace=entity.metadata.namespace,
+                )
                 target = self.try_get(ref)
                 out.append(Relation(relation_name, ref, target))
         return out
@@ -149,7 +172,13 @@ class Catalog:
         ref = entity.spec.get("system")
         if not ref:
             return None
-        return self.try_get(parse_entity_ref(str(ref), default_kind="system", default_namespace=entity.metadata.namespace))
+        return self.try_get(
+            parse_entity_ref(
+                str(ref),
+                default_kind="system",
+                default_namespace=entity.metadata.namespace,
+            )
+        )
 
     def domain_of(self, entity: Entity) -> Entity | None:
         """The Domain an entity belongs to, via its System if it isn't one itself."""
@@ -164,16 +193,26 @@ class Catalog:
         domain_ref = system.spec.get("domain")
         if not domain_ref:
             return None
-        return self.try_get(parse_entity_ref(str(domain_ref), default_kind="domain", default_namespace=system.metadata.namespace))
+        return self.try_get(
+            parse_entity_ref(
+                str(domain_ref),
+                default_kind="domain",
+                default_namespace=system.metadata.namespace,
+            )
+        )
 
     def owner_of(self, entity: Entity) -> Entity | None:
         owner_ref = entity.spec.get("owner")
         if not owner_ref:
             return None
-        ref = parse_entity_ref(str(owner_ref), default_namespace=entity.metadata.namespace)
+        ref = parse_entity_ref(
+            str(owner_ref), default_namespace=entity.metadata.namespace
+        )
         if ref.kind:
             return self.try_get(ref)
-        return self.try_get(EntityRef(kind="group", namespace=ref.namespace, name=ref.name)) or self.try_get(
+        return self.try_get(
+            EntityRef(kind="group", namespace=ref.namespace, name=ref.name)
+        ) or self.try_get(
             EntityRef(kind="user", namespace=ref.namespace, name=ref.name)
         )
 
@@ -204,7 +243,11 @@ def load_catalog(paths: list[Path]) -> Catalog:
         entities = load_entities_from_file(path)
         catalog.add_all(entities)
         for entity in entities:
-            pending.extend(candidate for candidate in resolve_location(entity) if candidate not in loaded)
+            pending.extend(
+                candidate
+                for candidate in resolve_location(entity)
+                if candidate not in loaded
+            )
     return catalog
 
 
@@ -218,7 +261,9 @@ def resolve_catalog_paths(
         paths = [Path(f) for f in files]
         missing = [p for p in paths if not p.exists()]
         if missing:
-            raise CatalogFileError(f"File(s) not found: {', '.join(str(p) for p in missing)}")
+            raise CatalogFileError(
+                f"File(s) not found: {', '.join(str(p) for p in missing)}"
+            )
         return paths
 
     root_path = Path(root) if root else Path.cwd()

@@ -48,7 +48,12 @@ def test_validates_template() -> None:
             "apiVersion": "scaffolder.backstage.io/v1beta3",
             "kind": "Template",
             "metadata": {"name": "example-template"},
-            "spec": {"type": "service", "owner": "team-a", "parameters": [], "steps": []},
+            "spec": {
+                "type": "service",
+                "owner": "team-a",
+                "parameters": [],
+                "steps": [],
+            },
         }
     )
 

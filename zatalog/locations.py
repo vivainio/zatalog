@@ -28,23 +28,34 @@ def resolve_location(entity: Entity) -> list[Path]:
     found: list[Path] = []
     for pattern in patterns:
         if not isinstance(pattern, str) or not pattern:
-            raise CatalogFileError(f"{entity.ref}: Location paths must be non-empty strings")
+            raise CatalogFileError(
+                f"{entity.ref}: Location paths must be non-empty strings"
+            )
         if Path(pattern).is_absolute() or ".." in Path(pattern).parts:
-            raise CatalogFileError(f"{entity.ref}: Location path must stay inside the repository: {pattern}")
+            raise CatalogFileError(
+                f"{entity.ref}: Location path must stay inside the repository: {pattern}"
+            )
         matches = sorted(checkout.glob(pattern))
         for match in matches:
             if match.is_dir():
-                matches_in_dir = [*match.rglob("catalog-info.yaml"), *match.rglob("catalog-info.yml")]
+                matches_in_dir = [
+                    *match.rglob("catalog-info.yaml"),
+                    *match.rglob("catalog-info.yml"),
+                ]
                 found.extend(sorted(matches_in_dir))
             elif match.is_file():
                 found.append(match)
     if not found:
-        raise CatalogFileError(f"{entity.ref}: no catalog files matched {patterns!r} in {target}")
+        raise CatalogFileError(
+            f"{entity.ref}: no catalog files matched {patterns!r} in {target}"
+        )
     root = checkout.resolve()
     resolved = list(dict.fromkeys(path.resolve() for path in found))
     escaped = [path for path in resolved if not path.is_relative_to(root)]
     if escaped:
-        raise CatalogFileError(f"{entity.ref}: Location path escapes the repository: {escaped[0]}")
+        raise CatalogFileError(
+            f"{entity.ref}: Location path escapes the repository: {escaped[0]}"
+        )
     return resolved
 
 
@@ -56,7 +67,15 @@ def _checkout(target: str, revision: str) -> Path:
     try:
         if not (checkout / ".git").is_dir():
             subprocess.run(
-                ["git", "clone", "--depth", "1", "--no-single-branch", target, str(checkout)],
+                [
+                    "git",
+                    "clone",
+                    "--depth",
+                    "1",
+                    "--no-single-branch",
+                    target,
+                    str(checkout),
+                ],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -68,12 +87,26 @@ def _checkout(target: str, revision: str) -> Path:
             text=True,
         )
         subprocess.run(
-            ["git", "-C", str(checkout), "checkout", "--detach", "--force", "FETCH_HEAD"],
+            [
+                "git",
+                "-C",
+                str(checkout),
+                "checkout",
+                "--detach",
+                "--force",
+                "FETCH_HEAD",
+            ],
             check=True,
             capture_output=True,
             text=True,
         )
     except (OSError, subprocess.CalledProcessError) as e:
-        detail = e.stderr.strip() if isinstance(e, subprocess.CalledProcessError) and e.stderr else str(e)
-        raise CatalogFileError(f"Cannot load git catalog {target} at {revision}: {detail}") from e
+        detail = (
+            e.stderr.strip()
+            if isinstance(e, subprocess.CalledProcessError) and e.stderr
+            else str(e)
+        )
+        raise CatalogFileError(
+            f"Cannot load git catalog {target} at {revision}: {detail}"
+        ) from e
     return checkout

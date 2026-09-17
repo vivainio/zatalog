@@ -12,19 +12,26 @@ def test_get_path_spec_field(catalog) -> None:
 
 def test_get_path_bad_entity_field_lists_fields(catalog) -> None:
     entity = catalog.get("component:default/payments-api")
-    with pytest.raises(KeyError, match="fields: apiVersion, kind, metadata, spec, source"):
+    with pytest.raises(
+        KeyError, match="fields: apiVersion, kind, metadata, spec, source"
+    ):
         get_path(entity, "bogus")
 
 
 def test_get_path_bad_metadata_field_lists_fields(catalog) -> None:
     entity = catalog.get("component:default/payments-api")
-    with pytest.raises(KeyError, match="fields: name, namespace, title, description, labels, annotations, tags, links"):
+    with pytest.raises(
+        KeyError,
+        match="fields: name, namespace, title, description, labels, annotations, tags, links",
+    ):
         get_path(entity, "metadata.bogus")
 
 
 def test_get_path_bad_dict_key_lists_keys(catalog) -> None:
     entity = catalog.get("component:default/payments-api")
-    with pytest.raises(KeyError, match="keys: lifecycle, owner, providesApis, system, type"):
+    with pytest.raises(
+        KeyError, match="keys: lifecycle, owner, providesApis, system, type"
+    ):
         get_path(entity, "spec.bogus")
 
 
@@ -50,7 +57,9 @@ def test_resolve_annotation_walks_up_to_domain(catalog) -> None:
 
 def test_resolve_annotation_no_walk(catalog) -> None:
     component = catalog.get("component:default/payments-api")
-    value, source = resolve_annotation(catalog, component, "jira/project-key", walk=False)
+    value, source = resolve_annotation(
+        catalog, component, "jira/project-key", walk=False
+    )
     assert value is None
     assert source is component
 

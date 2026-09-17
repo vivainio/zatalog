@@ -44,7 +44,9 @@ class EntityRef(NamedTuple):
     @property
     def key(self) -> str:
         """Lowercased `kind:namespace/name` used as the catalog's lookup key."""
-        return f"{(self.kind or '').lower()}:{self.namespace.lower()}/{self.name.lower()}"
+        return (
+            f"{(self.kind or '').lower()}:{self.namespace.lower()}/{self.name.lower()}"
+        )
 
     def __str__(self) -> str:
         kind = f"{self.kind}:" if self.kind else ""
@@ -112,7 +114,9 @@ class Entity:
 
     @property
     def ref(self) -> EntityRef:
-        return EntityRef(kind=self.kind, namespace=self.metadata.namespace, name=self.metadata.name)
+        return EntityRef(
+            kind=self.kind, namespace=self.metadata.namespace, name=self.metadata.name
+        )
 
     def get_spec(self, key: str, default: Any = None) -> Any:
         return self.spec.get(key, default)
@@ -188,7 +192,9 @@ def expand_placeholders(value: Any, base: Path | str) -> Any:
             return json.loads(content)
         documents = list(yaml.safe_load_all(content))
     except (json.JSONDecodeError, yaml.YAMLError) as e:
-        raise CatalogFileError(f"Invalid {kind[1:].upper()} in placeholder {target}: {e}") from e
+        raise CatalogFileError(
+            f"Invalid {kind[1:].upper()} in placeholder {target}: {e}"
+        ) from e
     if len(documents) != 1:
         raise CatalogFileError(
             f"Placeholder {kind} expected exactly one YAML document in {target}, found {len(documents)}"

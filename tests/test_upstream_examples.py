@@ -23,9 +23,9 @@ def test_backstage_software_template_yaml_examples(monkeypatch) -> None:
         "https://github.com/example/path/to/parameters.yaml": (
             FIXTURES / "parameters.yaml"
         ).read_text(encoding="utf-8"),
-        "https://github.com/example/path/to/action.yaml": (FIXTURES / "action.yaml").read_text(
-            encoding="utf-8"
-        ),
+        "https://github.com/example/path/to/action.yaml": (
+            FIXTURES / "action.yaml"
+        ).read_text(encoding="utf-8"),
     }
     monkeypatch.setattr(
         zatalog.entity,

@@ -34,7 +34,9 @@ def test_show(capsys) -> None:
     assert "type: service" in out
 
 
-def test_show_discovers_catalog_in_parent_directory(capsys, monkeypatch, tmp_path) -> None:
+def test_show_discovers_catalog_in_parent_directory(
+    capsys, monkeypatch, tmp_path
+) -> None:
     project = tmp_path / "project"
     nested = project / "src" / "package"
     nested.mkdir(parents=True)
@@ -80,7 +82,9 @@ def test_jira_missing_raises() -> None:
 
 def test_annotations_lists_direct_and_inherited(capsys) -> None:
     out = run(capsys, "annotations", "component:default/payments-api").out
-    assert "jira/project-key: PAY  # inherited from Domain:default/payments-domain" in out
+    assert (
+        "jira/project-key: PAY  # inherited from Domain:default/payments-domain" in out
+    )
 
 
 def test_annotations_no_walk_hides_inherited(capsys) -> None:
@@ -91,15 +95,26 @@ def test_annotations_no_walk_hides_inherited(capsys) -> None:
 def test_annotation_missing_hints_available_keys() -> None:
     parser = build_parser()
     args = parser.parse_args(
-        ["annotation", "-f", FIXTURE, "component:default/checkout-service", "no/such-key"]
+        [
+            "annotation",
+            "-f",
+            FIXTURE,
+            "component:default/checkout-service",
+            "no/such-key",
+        ]
     )
-    with pytest.raises(ApplicationError, match="chain has: jira/component, jira/project-key"):
+    with pytest.raises(
+        ApplicationError, match="chain has: jira/component, jira/project-key"
+    ):
         args.func(args)
 
 
 def test_labels_empty_when_none_set(capsys) -> None:
     out = run(capsys, "labels", "component:default/checkout-service").out
-    assert "No labels set on Component:default/checkout-service or its System/Domain" in out
+    assert (
+        "No labels set on Component:default/checkout-service or its System/Domain"
+        in out
+    )
 
 
 def test_validate_reports_dangling(capsys) -> None:

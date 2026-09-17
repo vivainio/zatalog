@@ -13,7 +13,16 @@ from zatalog.entity import Entity
 
 _SUPPORTED_ENTITIES = {
     ("backstage.io/v1alpha1", kind)
-    for kind in ("api", "component", "domain", "group", "location", "resource", "system", "user")
+    for kind in (
+        "api",
+        "component",
+        "domain",
+        "group",
+        "location",
+        "resource",
+        "system",
+        "user",
+    )
 } | {
     ("backstage.io/v1beta1", "api"),
     ("backstage.io/v1beta2", "template"),
@@ -33,7 +42,10 @@ def validate_entity(entity: Entity) -> list[str]:
     """Return field-level schema errors for a known kind; custom kinds are accepted."""
     if (entity.api_version, entity.kind.lower()) not in _SUPPORTED_ENTITIES:
         return []
-    errors = sorted(_validator().iter_errors(entity.raw), key=lambda error: list(error.absolute_path))
+    errors = sorted(
+        _validator().iter_errors(entity.raw),
+        key=lambda error: list(error.absolute_path),
+    )
     return [f"{_format_path(error.absolute_path)}: {error.message}" for error in errors]
 
 

@@ -34,7 +34,9 @@ def _entity_to_dict(entity: Entity) -> dict[str, Any]:
     return {
         "apiVersion": entity.api_version,
         "kind": entity.kind,
-        "metadata": {k: v for k, v in asdict(entity.metadata).items() if v not in (None, {}, [])},
+        "metadata": {
+            k: v for k, v in asdict(entity.metadata).items() if v not in (None, {}, [])
+        },
         "spec": entity.spec,
         "source": str(entity.source) if entity.source else None,
     }
@@ -72,10 +74,18 @@ def get_command(args: argparse.Namespace) -> None:
         value = get_path(entity, args.field)
     except KeyError as e:
         raise ApplicationError(str(e)) from e
-    print(_dump(value, args.format).rstrip() if isinstance(value, (dict, list)) else value)
+    print(
+        _dump(value, args.format).rstrip() if isinstance(value, (dict, list)) else value
+    )
 
 
-def _not_found_error(kind: str, key: str, entity: Entity, available: list[tuple[str, str, Entity]], walk: bool) -> ApplicationError:
+def _not_found_error(
+    kind: str,
+    key: str,
+    entity: Entity,
+    available: list[tuple[str, str, Entity]],
+    walk: bool,
+) -> ApplicationError:
     scope = f"{entity.ref}" + (" or its System/Domain" if walk else "")
     if available:
         hint = f"; {entity.ref} chain has: {', '.join(k for k, _, _ in available)}"
@@ -96,7 +106,13 @@ def annotation_command(args: argparse.Namespace) -> None:
     walk = not args.no_walk
     value, source = resolve_annotation(catalog, entity, args.key, walk=walk)
     if value is None:
-        raise _not_found_error("Annotation", args.key, entity, available_annotations(catalog, entity, walk=walk), walk)
+        raise _not_found_error(
+            "Annotation",
+            args.key,
+            entity,
+            available_annotations(catalog, entity, walk=walk),
+            walk,
+        )
     if source.ref != entity.ref:
         print(f"{value}  # inherited from {source.ref}", file=sys.stderr)
     print(value)
@@ -107,7 +123,10 @@ def annotations_command(args: argparse.Namespace) -> None:
     entity = catalog.get(args.ref)
     entries = available_annotations(catalog, entity, walk=not args.no_walk)
     if not entries:
-        print(f"No annotations set on {entity.ref}" + ("" if args.no_walk else " or its System/Domain"))
+        print(
+            f"No annotations set on {entity.ref}"
+            + ("" if args.no_walk else " or its System/Domain")
+        )
         return
     _print_entries(entries, entity)
 
@@ -118,7 +137,13 @@ def label_command(args: argparse.Namespace) -> None:
     walk = not args.no_walk
     value, source = resolve_label(catalog, entity, args.key, walk=walk)
     if value is None:
-        raise _not_found_error("Label", args.key, entity, available_labels(catalog, entity, walk=walk), walk)
+        raise _not_found_error(
+            "Label",
+            args.key,
+            entity,
+            available_labels(catalog, entity, walk=walk),
+            walk,
+        )
     if source.ref != entity.ref:
         print(f"{value}  # inherited from {source.ref}", file=sys.stderr)
     print(value)
@@ -129,7 +154,10 @@ def labels_command(args: argparse.Namespace) -> None:
     entity = catalog.get(args.ref)
     entries = available_labels(catalog, entity, walk=not args.no_walk)
     if not entries:
-        print(f"No labels set on {entity.ref}" + ("" if args.no_walk else " or its System/Domain"))
+        print(
+            f"No labels set on {entity.ref}"
+            + ("" if args.no_walk else " or its System/Domain")
+        )
         return
     _print_entries(entries, entity)
 
@@ -137,7 +165,9 @@ def labels_command(args: argparse.Namespace) -> None:
 def jira_command(args: argparse.Namespace) -> None:
     catalog = _load_catalog(args)
     entity = catalog.get(args.ref)
-    info = jira_info(catalog, entity, project_annotation=args.annotation, walk=not args.no_walk)
+    info = jira_info(
+        catalog, entity, project_annotation=args.annotation, walk=not args.no_walk
+    )
     if info is None:
         raise ApplicationError(
             f"No '{args.annotation}' annotation found on {entity.ref}"
@@ -147,7 +177,9 @@ def jira_command(args: argparse.Namespace) -> None:
         print(
             json.dumps(
                 {
-                    "projects": [{"key": p.key, "instance": p.instance} for p in info.projects],
+                    "projects": [
+                        {"key": p.key, "instance": p.instance} for p in info.projects
+                    ],
                     "component": info.component,
                     "label": info.label,
                     "source": str(info.source.ref),
@@ -187,13 +219,17 @@ def validate_command(args: argparse.Namespace) -> None:
             problems.append(f"{entity.ref}: schema {problem}")
         for relation in catalog.relations(entity):
             if not relation.resolved:
-                problems.append(f"{entity.ref}: {relation.name} -> {relation.ref} does not resolve")
+                problems.append(
+                    f"{entity.ref}: {relation.name} -> {relation.ref} does not resolve"
+                )
     if not problems:
         print(f"OK: {len(entities)} entities, schemas valid and all relations resolve.")
         return
     for problem in problems:
         print(problem)
-    raise ApplicationError(f"{len(problems)} problem(s) found across {len(entities)} entities")
+    raise ApplicationError(
+        f"{len(problems)} problem(s) found across {len(entities)} entities"
+    )
 
 
 def _add_catalog_args(parser: argparse.ArgumentParser) -> None:
@@ -245,7 +281,9 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=_MAIN_EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("-V", "--version", action="version", version=f"%(prog)s {__version__}")
+    parser.add_argument(
+        "-V", "--version", action="version", version=f"%(prog)s {__version__}"
+    )
 
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
@@ -274,7 +312,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_catalog_args(get_parser)
     _add_ref_arg(get_parser)
-    get_parser.add_argument("field", help="Dotted field path, e.g. 'spec.owner' or 'metadata.tags.0'")
+    get_parser.add_argument(
+        "field", help="Dotted field path, e.g. 'spec.owner' or 'metadata.tags.0'"
+    )
     get_parser.add_argument("--format", choices=["yaml", "json"], default="yaml")
     get_parser.set_defaults(func=get_command)
 
@@ -290,8 +330,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_catalog_args(annotation_parser)
     _add_ref_arg(annotation_parser)
-    annotation_parser.add_argument("key", help="Annotation key, e.g. 'backstage.io/managed-by-location'")
-    annotation_parser.add_argument("--no-walk", action="store_true", help="Only check the entity itself")
+    annotation_parser.add_argument(
+        "key", help="Annotation key, e.g. 'backstage.io/managed-by-location'"
+    )
+    annotation_parser.add_argument(
+        "--no-walk", action="store_true", help="Only check the entity itself"
+    )
     annotation_parser.set_defaults(func=annotation_command)
 
     annotations_parser = subparsers.add_parser(
@@ -306,7 +350,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_catalog_args(annotations_parser)
     _add_ref_arg(annotations_parser)
-    annotations_parser.add_argument("--no-walk", action="store_true", help="Only check the entity itself")
+    annotations_parser.add_argument(
+        "--no-walk", action="store_true", help="Only check the entity itself"
+    )
     annotations_parser.set_defaults(func=annotations_command)
 
     label_parser = subparsers.add_parser(
@@ -318,7 +364,9 @@ def build_parser() -> argparse.ArgumentParser:
     _add_catalog_args(label_parser)
     _add_ref_arg(label_parser)
     label_parser.add_argument("key", help="Label key")
-    label_parser.add_argument("--no-walk", action="store_true", help="Only check the entity itself")
+    label_parser.add_argument(
+        "--no-walk", action="store_true", help="Only check the entity itself"
+    )
     label_parser.set_defaults(func=label_command)
 
     labels_parser = subparsers.add_parser(
@@ -329,7 +377,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_catalog_args(labels_parser)
     _add_ref_arg(labels_parser)
-    labels_parser.add_argument("--no-walk", action="store_true", help="Only check the entity itself")
+    labels_parser.add_argument(
+        "--no-walk", action="store_true", help="Only check the entity itself"
+    )
     labels_parser.set_defaults(func=labels_command)
 
     jira_parser = subparsers.add_parser(
@@ -350,16 +400,22 @@ def build_parser() -> argparse.ArgumentParser:
         default="jira/project-key",
         help="Annotation key to read (default: jira/project-key)",
     )
-    jira_parser.add_argument("--no-walk", action="store_true", help="Only check the entity itself")
+    jira_parser.add_argument(
+        "--no-walk", action="store_true", help="Only check the entity itself"
+    )
     jira_parser.add_argument("--format", choices=["text", "json"], default="text")
     jira_parser.set_defaults(func=jira_command)
 
-    refs_parser = subparsers.add_parser("refs", help="Show an entity's outgoing relations")
+    refs_parser = subparsers.add_parser(
+        "refs", help="Show an entity's outgoing relations"
+    )
     _add_catalog_args(refs_parser)
     _add_ref_arg(refs_parser)
     refs_parser.set_defaults(func=refs_command)
 
-    validate_parser = subparsers.add_parser("validate", help="Check that every relation in the catalog resolves")
+    validate_parser = subparsers.add_parser(
+        "validate", help="Check that every relation in the catalog resolves"
+    )
     _add_catalog_args(validate_parser)
     validate_parser.set_defaults(func=validate_command)
 
