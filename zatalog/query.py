@@ -41,38 +41,35 @@ def get_path(entity: Entity, path: str) -> Any:
     return value
 
 
+_ENTITY_FIELDS = ("apiVersion", "kind", "metadata", "spec", "source")
+_METADATA_FIELDS = ("name", "namespace", "title", "description", "labels", "annotations", "tags", "links")
+
+
 def _get_part(value: Any, part: str, so_far: str) -> Any:
     if isinstance(value, Entity):
         attr = _FIELD_ALIASES.get(part, part)
         if attr in ("api_version", "kind", "metadata", "spec", "source"):
             return getattr(value, attr)
-        raise KeyError(f"Entity has no field '{part}' (at '{so_far}')")
+        raise KeyError(f"Entity has no field '{part}' (at '{so_far}'); fields: {', '.join(_ENTITY_FIELDS)}")
     if isinstance(value, EntityMetadata):
-        if part in (
-            "name",
-            "namespace",
-            "title",
-            "description",
-            "labels",
-            "annotations",
-            "tags",
-            "links",
-        ):
+        if part in _METADATA_FIELDS:
             return getattr(value, part)
-        raise KeyError(f"metadata has no field '{part}' (at '{so_far}')")
+        raise KeyError(f"metadata has no field '{part}' (at '{so_far}'); fields: {', '.join(_METADATA_FIELDS)}")
     if isinstance(value, dict):
         if part in value:
             return value[part]
-        raise KeyError(f"No key '{part}' (at '{so_far}')")
+        keys = ", ".join(sorted(value)) if value else "(empty)"
+        raise KeyError(f"No key '{part}' (at '{so_far}'); keys: {keys}")
     if isinstance(value, list):
+        bounds = f"0-{len(value) - 1}" if value else "(empty list)"
         try:
             index = int(part)
         except ValueError as e:
-            raise KeyError(f"'{part}' is not a valid list index (at '{so_far}')") from e
+            raise KeyError(f"'{part}' is not a valid list index (at '{so_far}'); valid indices: {bounds}") from e
         try:
             return value[index]
         except IndexError as e:
-            raise KeyError(f"Index {index} out of range (at '{so_far}')") from e
+            raise KeyError(f"Index {index} out of range (at '{so_far}'); valid indices: {bounds}") from e
     raise KeyError(f"Cannot look up '{part}' on {type(value).__name__} (at '{so_far}')")
 
 
@@ -95,6 +92,32 @@ def resolve_label(catalog: Catalog, entity: Entity, key: str, walk: bool = True)
         if key in candidate.metadata.labels:
             return candidate.metadata.labels[key], candidate
     return None, entity
+
+
+def _merge_chain(chain: list[Entity], field: str) -> list[tuple[str, str, Entity]]:
+    """Merge a `dict[str, str]` metadata field across `chain`, closest entity wins."""
+    seen: dict[str, tuple[str, Entity]] = {}
+    for candidate in chain:
+        for key, value in getattr(candidate.metadata, field).items():
+            seen.setdefault(key, (value, candidate))
+    return [(key, value, source) for key, (value, source) in sorted(seen.items())]
+
+
+def available_annotations(catalog: Catalog, entity: Entity, walk: bool = True) -> list[tuple[str, str, Entity]]:
+    """All annotation keys visible from `entity`, walking its ancestry like `resolve_annotation`.
+
+    Returns sorted (key, value, source_entity) triples. If a key is set at
+    more than one level, the closest entity's value wins, matching
+    `resolve_annotation`'s precedence.
+    """
+    chain = catalog.ancestry(entity) if walk else [entity]
+    return _merge_chain(chain, "annotations")
+
+
+def available_labels(catalog: Catalog, entity: Entity, walk: bool = True) -> list[tuple[str, str, Entity]]:
+    """All label keys visible from `entity`, walking its ancestry like `resolve_label`."""
+    chain = catalog.ancestry(entity) if walk else [entity]
+    return _merge_chain(chain, "labels")
 
 
 @dataclass
