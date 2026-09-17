@@ -60,8 +60,20 @@ questions like "current Jira project" from a shell prompt.
 
 ## Install
 
+As a CLI tool:
+
 ```
-pip install -e .
+uv tool install 'zatalog[cli]'
+```
+
+The `cli` extra pulls in `jsonschema`, needed for `zatalog validate`; every
+other command works without it, so plain `uv tool install zatalog` (or
+`pip install zatalog`) is enough if you don't need schema validation.
+
+As a library:
+
+```
+pip install zatalog
 ```
 
 ## Library usage
@@ -150,7 +162,7 @@ violations and unresolved supported relations.
 ## Development
 
 ```
-uv sync                    # or: pip install -e . pytest ruff
+uv sync --all-extras       # or: pip install -e '.[cli]' pytest ruff
 pytest
 ruff check zatalog tests
 ```

@@ -22,7 +22,6 @@ from zatalog.query import (
     resolve_annotation,
     resolve_label,
 )
-from zatalog.schema import validate_entity
 
 
 def _load_catalog(args: argparse.Namespace) -> Catalog:
@@ -211,6 +210,12 @@ def refs_command(args: argparse.Namespace) -> None:
 
 
 def validate_command(args: argparse.Namespace) -> None:
+    try:
+        from zatalog.schema import validate_entity
+    except ModuleNotFoundError as e:
+        raise ApplicationError(
+            "Schema validation requires the 'cli' extra: pip install 'zatalog[cli]'"
+        ) from e
     catalog = _load_catalog(args)
     entities = catalog.all()
     problems: list[str] = []

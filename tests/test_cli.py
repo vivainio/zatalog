@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -115,6 +116,15 @@ def test_labels_empty_when_none_set(capsys) -> None:
         "No labels set on Component:default/checkout-service or its System/Domain"
         in out
     )
+
+
+def test_validate_without_jsonschema_hints_extra(monkeypatch) -> None:
+    monkeypatch.setitem(sys.modules, "jsonschema", None)
+    monkeypatch.delitem(sys.modules, "zatalog.schema", raising=False)
+    parser = build_parser()
+    args = parser.parse_args(["validate", "-f", FIXTURE])
+    with pytest.raises(ApplicationError, match=r"pip install 'zatalog\[cli\]'"):
+        args.func(args)
 
 
 def test_validate_reports_dangling(capsys) -> None:

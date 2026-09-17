@@ -19,9 +19,11 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
-    "jsonschema>=4.18",
     "pyyaml>=6.0",
 ]
+
+[project.optional-dependencies]
+cli = ["jsonschema>=4.18"]
 
 [project.urls]
 Homepage = "https://github.com/vivainio/zatalog"
